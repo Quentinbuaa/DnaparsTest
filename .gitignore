@@ -1,0 +1,10 @@
+#ignore exe source code
+source/phylip-3.697/exe
+
+#ignore inputs dir
+inputs/
+
+#ignore outputs dir
+outputs/
+
+
