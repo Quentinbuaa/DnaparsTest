@@ -1,6 +1,15 @@
 #!/bin/bash
 
+install_origin(){
+cp original/seq.c ./phylip-3.697/src
+cd ./phylip-3.697/src
+make -f Makefile.unx install
+cd ../../
+cp ./phylip-3.697/exe/dnapars ../exe/dnapars_v0
+}
+
 install_all(){
+	install_origin
 for i in `seq 10`
 do 
 cp v$i/seq.c ./phylip-3.697/src
