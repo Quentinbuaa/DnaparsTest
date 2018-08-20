@@ -5,7 +5,7 @@ from TestCase import *
 
 class MR():
     def __init__(self):
-        self.set = ['A','G','C','U']
+        self.set = ['A','G','C','T']
 
     def setExecutor(self, executor):
         self.executor = executor
@@ -15,14 +15,18 @@ class MR():
 
     def process(self):
         self.executeTestCase(self.original_ts)
-        self.original_input = Input(self.original_ts.infile)
-        self.original_input.parseInfile()                                    # load the A,B,C and matrix information
-        self.original_output= self.getResults(self.original_ts)
-        self.followup_ts = self.generateFollowupTestCase(self.original_input)
-        self.executeTestCase(self.followup_ts)
-        self.followup_output = self.getResults(self.followup_ts)
-        self.expected_output = self.getExpectedOutput(self.original_output)
-        self.isViolate = self.assertViolation(self.expected_output, self.followup_output)
+        original_input = Input(self.original_ts.infile)
+        original_input.parseInfile()                                    # load the A,B,C and matrix information
+        original_output= self.getResults(self.original_ts)
+        followup_ts = self.generateFollowupTestCase(original_input)
+        self.executeTestCase(followup_ts)
+        followup_output = self.getResults(followup_ts)
+        expected_output = self.getExpectedOutput(original_output)
+        self.isViolate = self.assertViolation(expected_output, followup_output)
+        if self.isViolate:
+            print("True")
+        else:
+            print("False")
 
 
     def generateFollowupTestCase(self, original_input):
@@ -43,7 +47,10 @@ class MR():
             return True
 
     def getExpectedOutput(self, original_output):
-        return original_output
+        expected_output = Output(original_output.outfile_name, original_output.outtree_name)
+        expected_output.tree = original_output.tree
+        expected_output.total_length = original_output.total_length
+        return expected_output
 
     def getResults(self,ts):
         result = Output(ts.outfile, ts.outtree)
@@ -69,7 +76,7 @@ class MR1(MR):
         self.b = 4
 
     def getExpectedMatrix(self, original_input):
-        self.a = random.randint(0, len(original_input.matrix[0]))
+        self.a = random.randint(0, len(original_input.matrix[0])-1)
         self.b = self.a -3
         for i in range(len(original_input.matrix)):
             temp = original_input.matrix[i][self.a]
@@ -80,8 +87,8 @@ class MR1(MR):
 class MR2(MR):
     def __init__(self):
         super(MR2, self).__init__()
-        self.insert_index = 1
-        self.site_count = 5
+        self.insert_index = 3
+        self.site_count = 50
         self.insert_site = random.choice(self.set) # randomly choice an element from a list. Don't use sample(), which will return a list object.
 
     def getExpectedMatrix(self,original_input):
@@ -90,6 +97,29 @@ class MR2(MR):
             for j in range(self.site_count):
                 original_input.matrix[i].insert(self.insert_index, self.insert_site)
         return original_input
+
+class MR3(MR):
+
+    def getExpectedMatrix(self, original_input):
+        row = len(original_input.matrix)
+        col = len(original_input.matrix[0])
+        candidates = []
+        for c in range(col):
+            for r in range(1,row):
+                if not original_input.matrix[r][c] == original_input.matrix[0][c]:
+                    candidates.append(c)
+                    break
+        temp_matrix = []
+        for r in range(row):
+            temp = []
+            for c in candidates:
+                temp.append(original_input.matrix[r][c])
+            temp_matrix.append(temp)
+
+        original_input.B = str(len(candidates))
+        original_input.matrix = temp_matrix
+        return original_input
+
 
 class MR4(MR):
     def getExpectedMatrix(self, original_input):
@@ -101,8 +131,10 @@ class MR4(MR):
         return original_input
 
     def getExpectedOutput(self, original_output):
-        original_output.total_length = float(original_output.total_length)*2
-        return original_output
+        expected_output = Output(original_output.outfile_name, original_output.outtree_name)
+        expected_output.tree = original_output.tree
+        expected_output.total_length = float(original_output.total_length)*2
+        return expected_output
 
 class MR5(MR):
     def __init__(self):
@@ -152,7 +184,8 @@ class MR7(MR):
         self.source_index = 0
 
     def getExpectedMatrix(self, original_input):
-        self.source_index = random.randint(0,len(original_input.C)-1) # a<= N <= b
+        self.source_index = 2
+        #self.source_index = random.randint(0,len(original_input.C)-1) # a<= N <= b
         self.picked_taxon = original_input.C[self.source_index]
         self.new_taxon = self.picked_taxon+"_1"
         original_input.C.insert(self.source_index, self.new_taxon)
@@ -161,10 +194,12 @@ class MR7(MR):
         return original_input
 
     def getExpectedOutput(self, original_output):
+        expected_output = Output(original_output.outfile_name, original_output.outtree_name)
         tree = original_output.tree
         tree = re.sub(r"{}".format(self.picked_taxon), "({},{})".format(self.picked_taxon,self.new_taxon), tree)
-        original_output.tree = tree
-        return original_output
+        expected_output.tree = tree
+        expected_output.total_length = original_output.total_length
+        return expected_output
 
 class CompositionMR(MR):
     def __init__(self):
@@ -193,21 +228,19 @@ class CompositionMR(MR):
 if __name__ == "__main__":
     killed_v = []
     ts =TestCase()
-    #for mr in [MR2(),MR4(),MR6(),MR7()]:
-    #cmr = CompositionMR()
-    #cmr.setMRs([MR6(),MR1()])
-    mr_list = [MR1(),MR2(),MR4(),MR6(),MR7()]
+    dna = Dnapars()
+    cmr = CompositionMR()
+    cmr.setMRs([MR5(),MR2()])
+    mr_list = [MR1(),MR3(), MR2(), MR4(),MR6()]
     mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
     for mr in mr_list:
         table = dict(zip(mutants_list, [0]*len(mutants_list)))
-        for i in range(500):
+        for i in range(100):
             ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
             ts.generateRandomTestcase()
-            dna = Dnapars()
             mr.setTestCase(ts)
             mr.setExecutor(dna)
             for v in mutants_list:
-            #for v in ["v1"]:
                 dna.setVersion(v)
                 mr.process()
                 if mr.isViolate:

@@ -1,4 +1,4 @@
-#define FAULTY_V2
+#define FAULTY_V4
 
 #include "phylip.h"
 #include "seq.h"
@@ -518,12 +518,7 @@ void sitecombine(long chars)
 
   i = 1;
   while (i < chars) {
-#ifdef FAULTY_V4
-    j = i - 1;
-#else
     j = i + 1;
-#endif
-
     tied = true;
     while (j <= chars && tied) {
       k = 1;
@@ -562,7 +557,11 @@ void sitescrunch(long chars)
     if (ally[alias[i - 1] - 1] != alias[i - 1]) {
 #endif
       if (j <= i)
+#ifdef FAULTY_V4
+        j = i - 1;
+#else
         j = i + 1;
+#endif
       if (j <= chars) {
         do {
           found = (ally[alias[j - 1] - 1] == alias[j - 1]);

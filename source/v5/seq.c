@@ -1,4 +1,4 @@
-#define FAULTY_V2
+#define FAULTY_V5
 
 #include "phylip.h"
 #include "seq.h"

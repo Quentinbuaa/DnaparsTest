@@ -4,7 +4,7 @@ from Execution import *
 
 class TestCase():
     def __init__(self):
-        self.set = ['A','U','C','G']
+        self.set = ['A','T','C','G']
 
     def setInputOutput(self, infile_name, outfile_name, outtree_name):
         self.infile = infile_name
@@ -12,8 +12,8 @@ class TestCase():
         self.outtree = outtree_name
 
     def generateRandomTestcase(self):
-        self.A = random.randint(5,10)
-        self.B = random.randint(5000, 10000)
+        self.A = random.randint(3,8)
+        self.B = random.randint(100,300)
         self.C = self.getNameList()
         self.matrix = self.getMatrix()
         myInput = Input(self.infile)
@@ -45,7 +45,7 @@ class TestCase_V1(TestCase):
 
     def generateRandomTestcase(self):
         self.A = 4
-        self.B = 200000
+        self.B = random.randint(100,300)
         self.C = self.getNameList()
         self.matrix = self.getMatrix()
         myInput = Input(self.infile)
