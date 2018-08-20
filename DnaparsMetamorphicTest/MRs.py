@@ -226,6 +226,8 @@ class CompositionMR(MR):
 
 
 if __name__ == "__main__":
+    myenv = MyEnv()
+    myenv.CreateWorkingDirs()
     killed_v = []
     ts =TestCase()
     dna = Dnapars()

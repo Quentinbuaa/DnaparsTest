@@ -1,7 +1,22 @@
 import re
 import os
-
 import re
+
+class MyEnv():
+    def __init__(self):
+        self.workspace_dir = "/home/quentin/workspace/dnaparsTest"
+        self.inputs_dir = self.workspace_dir + "/inputs"
+        self.outputs_dir = self.workspace_dir+ "/outputs"
+
+    def CreateWorkingDirs(self):
+        self.checkDir(self.inputs_dir)
+        self.checkDir(self.outputs_dir)
+
+    def checkDir(self, dir):
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+            print("created dir of {}".format())
+
 class Input():
     def __init__(self, infile):
         self.setInfile(infile)
@@ -34,7 +49,8 @@ class Input():
         return self.infile
 
     def setInfile(self, infile):
-        self.infile = "/home/quentin/workspace/dnaparsTest/inputs/{}".format(infile)
+        env = MyEnv()
+        self.infile = env.inputs_dir+"/{}".format(infile)
 
     def getMatrix(self):
         matrix = []
@@ -56,9 +72,10 @@ class Input():
 class Output():
     def __init__(self, outfile, outtree):
         self.tree = ""
+        env = MyEnv()
         self.total_length = 0.0
-        self.outfile_name = "/home/quentin/workspace/dnaparsTest/outputs/{}".format(outfile)
-        self.outtree_name = "/home/quentin/workspace/dnaparsTest/outputs/{}".format(outtree)
+        self.outfile_name = env.outputs_dir + "/{}".format(outfile)
+        self.outtree_name = env.outputs_dir + "/{}".format(outtree)
 
     def parse(self):
         self.tree = self.getTree()
@@ -92,7 +109,8 @@ class Output():
 
 class Dnapars():
     def __init__(self):
-        self.workspace = "/home/quentin/workspace/dnaparsTest"
+        env = MyEnv()
+        self.workspace = env.workspace_dir
 
     def setInputOutputNames(self, infile_name, outfile_name, outtree_name):
         self.infile = infile_name
@@ -110,7 +128,4 @@ class Dnapars():
 
 if __name__ == "__main__":
     dna = Dnapars()
-    dna.executeDnapars()
-    #print(dna.getTotalLength())
-    #print(dna.getTree())
 
