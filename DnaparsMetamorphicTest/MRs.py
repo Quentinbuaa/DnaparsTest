@@ -25,10 +25,10 @@ class MR():
         followup_output = self.getResults(followup_ts)
         expected_output = self.getExpectedOutput(original_output)
         self.isViolate = self.assertViolation(expected_output, followup_output)
-        if self.isViolate:
-            print("True")
-        else:
-            print("False")
+        #if self.isViolate:
+        #    print("True")
+        #else:
+        #    print("False")
 
 
     def generateFollowupTestCase(self, original_input):
@@ -78,7 +78,7 @@ class MR1(MR):
         self.b = 4
 
     def getExpectedMatrix(self, original_input):
-        followup_input =copy.deepcopy(original_input)
+        followup_input = copy.deepcopy(original_input)
         self.a = random.randint(0, len(followup_input.matrix[0])-1)
         self.b = self.a -3
         for i in range(len(followup_input.matrix)):
@@ -234,11 +234,9 @@ class CompositionMR(MR):
     def assertViolation(self, exp_output, followup_output):
         return self.MRs[-1].assertViolation(exp_output, followup_output)
 
-
-
 def getCMRTestMR5List():
-    mr_list = [[MR5(),MR1()],[MR5(),MR2()],[MR5(),MR3()],[MR5(),MR4()],[MR5(),MR6()]]
-    #mr_list = [[MR5(),MR3()]]
+    #mr_list = [[MR5(),MR1()],[MR5(),MR2()],[MR5(),MR3()],[MR5(),MR4()],[MR5(),MR6()]]
+    mr_list = [[MR5(),MR3()]]
     cmr_list = []
     for cmr_c in mr_list:
         temp = CompositionMR()
@@ -254,6 +252,12 @@ def getCMRPermutationsList(mr_list):
         temp.setMRs(list(cmr_p))
         cmr_list.append(temp)
     return cmr_list
+
+def setTS(mr, ts, ts1):
+    if mr.__class__.__name__ == "MR5":
+        mr.setTestCase(ts1)
+    else:
+        mr.setTestCase(ts)
 
 def testCMR():
     myenv = MyEnv()
@@ -297,11 +301,6 @@ def testCMR():
     result.writelines(temp)
     result.close()
 
-def setTS(mr, ts, ts1):
-    if mr.__class__.__name__ == "MR5":
-        mr.setTestCase(ts1)
-    else:
-        mr.setTestCase(ts)
 
 def testSingleMR():
     myenv = MyEnv()
@@ -309,12 +308,7 @@ def testSingleMR():
     ts =TestCase()
     ts1 = TestCase_V1()
     dna = Dnapars()
-    cmr = CompositionMR()
-    cmr.setMRs([MR1(),MR2()])
-    cmr1 = CompositionMR()
-    cmr1.setMRs([MR2(),MR1()])
-    mr_list = [cmr1]
-    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
+    mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
     #mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
     mutants_list = ["v4"]
     for mr in mr_list:
@@ -339,7 +333,7 @@ def testSingleMR():
     result.writelines(temp)
     result.close()
 
-def testMR7():
+def testSinglMRWithOneTestCase():
     myenv = MyEnv()
     myenv.CreateWorkingDirs()
     killed_v = []
@@ -359,7 +353,46 @@ def testMR7():
             table["v1"] = table["v1"]+1
         cmr.setKilledMutantsTable(table)
 
-
+def testCompositionMR():
+    myenv = MyEnv()
+    myenv.CreateWorkingDirs()
+    dna = Dnapars()
+    flag = "Test MR5"
+    result_to_save = "CMR_1000_part3.result"
+    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR6(), MR7()]
+    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
+    mr_list = [MR1(), MR7()]
+    if flag == "Test MR5":
+        ts = TestCase_V1()
+        cmr_list = getCMRTestMR5List() 
+    else:
+        ts = TestCase()
+        cmr_list = getCMRPermutationsList(mr_list)
+    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    #mutants_list = ["v0"]
+    for cmr in cmr_list: table = dict(zip(mutants_list, [0]*len(mutants_list)))
+        for i in range(1000):
+            cmr.setTestCase(ts)
+            cmr.original_ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
+            cmr.original_ts.generateRandomTestcase()
+            cmr.setExecutor(dna)
+            for v in mutants_list:
+                dna.setVersion(v)
+                cmr.process()
+                if cmr.isViolate:
+                    table[v] = table[v]+1
+        cmr.setKilledMutantsTable(table)
+    result = open(result_to_save,"w")
+    temp = [v+"\t" for v in mutants_list]
+    temp.insert(0, "\t")
+    temp.append("\n")
+    for cmr in cmr_list:
+        temp.append("{}\t".format(cmr.name))
+        for v in mutants_list:
+            temp.append(str(cmr.table[v])+"\t")
+        temp.append("\n")
+    result.writelines(temp)
+    result.close()
 
 
 def testMR7MR1():

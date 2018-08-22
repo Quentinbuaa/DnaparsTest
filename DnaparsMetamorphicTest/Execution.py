@@ -4,7 +4,7 @@ import re
 
 class MyEnv():
     def __init__(self):
-        self.workspace_dir = "/home/quentin/workspace/dnaparsTest"
+        self.workspace_dir = "/home/quentin/composition_workspace/DnaparsTest"
         self.inputs_dir = self.workspace_dir + "/inputs"
         self.outputs_dir = self.workspace_dir+ "/outputs"
 
