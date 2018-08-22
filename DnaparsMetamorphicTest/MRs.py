@@ -2,6 +2,8 @@ import random
 import re
 from Execution import *
 from TestCase import *
+import itertools
+import copy
 
 class MR():
     def __init__(self):
@@ -76,13 +78,14 @@ class MR1(MR):
         self.b = 4
 
     def getExpectedMatrix(self, original_input):
-        self.a = random.randint(0, len(original_input.matrix[0])-1)
+        followup_input =copy.deepcopy(original_input)
+        self.a = random.randint(0, len(followup_input.matrix[0])-1)
         self.b = self.a -3
-        for i in range(len(original_input.matrix)):
-            temp = original_input.matrix[i][self.a]
-            original_input.matrix[i][self.a] = original_input.matrix[i][self.b]
-            original_input.matrix[i][self.b] = temp
-        return original_input
+        for i in range(len(followup_input.matrix)):
+            temp = followup_input.matrix[i][self.a]
+            followup_input.matrix[i][self.a] = followup_input.matrix[i][self.b]
+            followup_input.matrix[i][self.b] = temp
+        return followup_input
 
 class MR2(MR):
     def __init__(self):
@@ -92,14 +95,14 @@ class MR2(MR):
         self.insert_site = random.choice(self.set) # randomly choice an element from a list. Don't use sample(), which will return a list object.
 
     def getExpectedMatrix(self,original_input):
-        original_input.B = str(int(original_input.B)+self.site_count)
-        for i in range(len(original_input.matrix)):
+        followup_input = copy.deepcopy(original_input)
+        followup_input.B = str(int(followup_input.B)+self.site_count)
+        for i in range(len(followup_input.matrix)):
             for j in range(self.site_count):
-                original_input.matrix[i].insert(self.insert_index, self.insert_site)
-        return original_input
+                followup_input.matrix[i].insert(self.insert_index, self.insert_site)
+        return followup_input
 
 class MR3(MR):
-
     def getExpectedMatrix(self, original_input):
         row = len(original_input.matrix)
         col = len(original_input.matrix[0])
@@ -184,14 +187,15 @@ class MR7(MR):
         self.source_index = 0
 
     def getExpectedMatrix(self, original_input):
+        followup_input = copy.deepcopy(original_input)
         self.source_index = 2
         #self.source_index = random.randint(0,len(original_input.C)-1) # a<= N <= b
-        self.picked_taxon = original_input.C[self.source_index]
+        self.picked_taxon = followup_input.C[self.source_index]
         self.new_taxon = self.picked_taxon+"_1"
-        original_input.C.insert(self.source_index, self.new_taxon)
-        original_input.A = str(int(original_input.A)+1)
-        original_input.matrix.insert(self.source_index, original_input.matrix[self.source_index])
-        return original_input
+        followup_input.C.insert(self.source_index, self.new_taxon)
+        followup_input.A = str(int(followup_input.A)+1)
+        followup_input.matrix.insert(self.source_index, followup_input.matrix[self.source_index])
+        return followup_input
 
     def getExpectedOutput(self, original_output):
         expected_output = Output(original_output.outfile_name, original_output.outtree_name)
@@ -205,11 +209,16 @@ class CompositionMR(MR):
     def __init__(self):
         super(CompositionMR, self).__init__()
         self.MRs = [MR7(), MR4()]
+        self.name = self.getName()
         self.MRs.reverse()
 
     def setMRs(self, mr_list):
         self.MRs = mr_list
+        self.name = self.getName()
         self.MRs.reverse()
+
+    def getName(self):
+        return ''.join([mr.__class__.__name__ for mr in self.MRs])
 
     def getExpectedOutput(self, original_output):
         for mr in self.MRs:
@@ -217,30 +226,103 @@ class CompositionMR(MR):
         return original_output
 
     def getExpectedMatrix(self, original_input):
+        followup_input = copy.deepcopy(original_input)
         for mr in self.MRs:
-            original_input = mr.getExpectedMatrix(original_input)
-        return original_input
+            followup_input = mr.getExpectedMatrix(followup_input)
+        return followup_input
 
     def assertViolation(self, exp_output, followup_output):
         return self.MRs[-1].assertViolation(exp_output, followup_output)
 
 
-if __name__ == "__main__":
+
+def getCMRTestMR5List():
+    mr_list = [[MR5(),MR1()],[MR5(),MR2()],[MR5(),MR3()],[MR5(),MR4()],[MR5(),MR6()]]
+    #mr_list = [[MR5(),MR3()]]
+    cmr_list = []
+    for cmr_c in mr_list:
+        temp = CompositionMR()
+        temp.setMRs(cmr_c)
+        cmr_list.append(temp)
+    return cmr_list
+
+def getCMRPermutationsList(mr_list):
+    cmr_list = []
+    cmr_permutations = itertools.permutations(mr_list, 2)
+    for cmr_p in cmr_permutations:
+        temp = CompositionMR()
+        temp.setMRs(list(cmr_p))
+        cmr_list.append(temp)
+    return cmr_list
+
+def testCMR():
     myenv = MyEnv()
     myenv.CreateWorkingDirs()
-    killed_v = []
+    dna = Dnapars()
+    flag = "Test MR5"
+    result_to_save = "CMR_1000_part3.result"
+    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR6(), MR7()]
+    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
+    mr_list = [MR1(), MR7()]
+    if flag == "Test MR5":
+        ts = TestCase_V1()
+        cmr_list = getCMRTestMR5List()
+    else:
+        ts = TestCase()
+        cmr_list = getCMRPermutationsList(mr_list)
+    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    #mutants_list = ["v0"]
+    for cmr in cmr_list:
+        table = dict(zip(mutants_list, [0]*len(mutants_list)))
+        for i in range(1000):
+            cmr.setTestCase(ts)
+            cmr.original_ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
+            cmr.original_ts.generateRandomTestcase()
+            cmr.setExecutor(dna)
+            for v in mutants_list:
+                dna.setVersion(v)
+                cmr.process()
+                if cmr.isViolate:
+                    table[v] = table[v]+1
+        cmr.setKilledMutantsTable(table)
+    result = open(result_to_save,"w")
+    temp = [v+"\t" for v in mutants_list]
+    temp.insert(0, "\t")
+    temp.append("\n")
+    for cmr in cmr_list:
+        temp.append("{}\t".format(cmr.name))
+        for v in mutants_list:
+            temp.append(str(cmr.table[v])+"\t")
+        temp.append("\n")
+    result.writelines(temp)
+    result.close()
+
+def setTS(mr, ts, ts1):
+    if mr.__class__.__name__ == "MR5":
+        mr.setTestCase(ts1)
+    else:
+        mr.setTestCase(ts)
+
+def testSingleMR():
+    myenv = MyEnv()
+    myenv.CreateWorkingDirs()
     ts =TestCase()
+    ts1 = TestCase_V1()
     dna = Dnapars()
     cmr = CompositionMR()
-    cmr.setMRs([MR5(),MR2()])
-    mr_list = [MR1(),MR3(), MR2(), MR4(),MR6()]
-    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    cmr.setMRs([MR1(),MR2()])
+    cmr1 = CompositionMR()
+    cmr1.setMRs([MR2(),MR1()])
+    mr_list = [cmr1]
+    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
+    #mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    mutants_list = ["v4"]
     for mr in mr_list:
         table = dict(zip(mutants_list, [0]*len(mutants_list)))
-        for i in range(100):
-            ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
-            ts.generateRandomTestcase()
-            mr.setTestCase(ts)
+        setTS(mr,ts, ts1)
+        for i in range(1000):
+            mr.original_ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
+            mr.original_ts.generateRandomTestcase()
             mr.setExecutor(dna)
             for v in mutants_list:
                 dna.setVersion(v)
@@ -248,9 +330,63 @@ if __name__ == "__main__":
                 if mr.isViolate:
                     table[v] = table[v]+1
         mr.setKilledMutantsTable(table)
+    result = open("result","w")
+    temp = []
     for mr in mr_list:
-        print(mr.__class__.__name__)
+        temp.append("{}\n".format(mr.__class__.__name__))
         for v, t in mr.table.items():
-            print("{}: {}\t,".format(v, t))
-        print("\n")
+            temp.append("{}: {}\n".format(v, t))
+    result.writelines(temp)
+    result.close()
 
+def testMR7():
+    myenv = MyEnv()
+    myenv.CreateWorkingDirs()
+    killed_v = []
+    ts =TestCase_V2()
+    ts.setInputOutput("infile_{}".format("t"), "outfile_{}".format("t"),"outtree_{}".format("t"))
+    ts.generateRandomTestcase()
+    dna = Dnapars()
+    cmr_list = [MR7()]
+    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    for cmr in cmr_list:
+        table = dict(zip(mutants_list, [0]*len(mutants_list)))
+        cmr.setTestCase(ts)
+        cmr.setExecutor(dna)
+        dna.setVersion("v0")
+        cmr.process()
+        if cmr.isViolate:
+            table["v1"] = table["v1"]+1
+        cmr.setKilledMutantsTable(table)
+
+
+
+
+def testMR7MR1():
+    myenv = MyEnv()
+    myenv.CreateWorkingDirs()
+    killed_v = []
+    ts =TestCase_V2()
+    ts.setInputOutput("infile_{}".format("t"), "outfile_{}".format("t"),"outtree_{}".format("t"))
+    ts.generateRandomTestcase()
+    dna = Dnapars()
+    cmr1 = CompositionMR()
+    cmr2 = CompositionMR()
+    cmr1.setMRs([MR1(),MR7()])
+    cmr2.setMRs([MR7(),MR1()])
+    cmr_list = [cmr1,cmr2]
+    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    for cmr in cmr_list:
+        table = dict(zip(mutants_list, [0]*len(mutants_list)))
+        cmr.setTestCase(ts)
+        cmr.setExecutor(dna)
+        dna.setVersion("v1")
+        cmr.process()
+        if cmr.isViolate:
+            table["v1"] = table["v1"]+1
+        cmr.setKilledMutantsTable(table)
+
+
+if __name__ == "__main__":
+    for i in range(100):
+        testMR7()

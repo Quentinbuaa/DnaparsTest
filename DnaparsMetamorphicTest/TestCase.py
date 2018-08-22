@@ -53,6 +53,18 @@ class TestCase_V1(TestCase):
         myInput.writeInfile()
 
 
+class TestCase_V2(TestCase):
+    def __init__(self):
+        super(TestCase_V2, self).__init__()
+
+    def generateRandomTestcase(self):
+        self.A = 4
+        self.B = 4
+        self.C = self.getNameList()
+        self.matrix = self.getMatrix()
+        myInput = Input(self.infile)
+        myInput.setMatrix(self.A, self.B, self.C, self.matrix)
+        myInput.writeInfile()
 
 
 if __name__ == "__main__":

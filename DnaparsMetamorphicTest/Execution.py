@@ -15,7 +15,7 @@ class MyEnv():
     def checkDir(self, dir):
         if not os.path.exists(dir):
             os.makedirs(dir)
-            print("created dir of {}".format())
+            print("created dir of {}".format(dir))
 
 class Input():
     def __init__(self, infile):
