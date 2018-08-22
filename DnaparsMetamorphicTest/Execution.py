@@ -7,10 +7,12 @@ class MyEnv():
         self.workspace_dir = "/home/quentin/composition_workspace/DnaparsTest"
         self.inputs_dir = self.workspace_dir + "/inputs"
         self.outputs_dir = self.workspace_dir+ "/outputs"
+        self.results_dir = self.workspace_dir + "/results"
 
     def CreateWorkingDirs(self):
         self.checkDir(self.inputs_dir)
         self.checkDir(self.outputs_dir)
+        self.checkDir(self.results_dir)
 
     def checkDir(self, dir):
         if not os.path.exists(dir):
