@@ -8,6 +8,7 @@ import copy
 class MR():
     def __init__(self):
         self.set = ['A','G','C','T']
+        self.name = self.__class__.__name__
 
     def setExecutor(self, executor):
         self.executor = executor
@@ -235,8 +236,7 @@ class CompositionMR(MR):
         return self.MRs[-1].assertViolation(exp_output, followup_output)
 
 def getCMRTestMR5List():
-    #mr_list = [[MR5(),MR1()],[MR5(),MR2()],[MR5(),MR3()],[MR5(),MR4()],[MR5(),MR6()]]
-    mr_list = [[MR5(),MR3()]]
+    mr_list = [[MR5(),MR1()],[MR5(),MR2()],[MR5(),MR3()],[MR5(),MR4()],[MR5(),MR6()]]
     cmr_list = []
     for cmr_c in mr_list:
         temp = CompositionMR()
@@ -253,47 +253,12 @@ def getCMRPermutationsList(mr_list):
         cmr_list.append(temp)
     return cmr_list
 
-def setTS(mr, ts, ts1):
-    if mr.__class__.__name__ == "MR5":
-        mr.setTestCase(ts1)
-    else:
-        mr.setTestCase(ts)
-
-def testCMR():
-    myenv = MyEnv()
-    myenv.CreateWorkingDirs()
-    dna = Dnapars()
-    flag = "Test MR5"
-    result_to_save = "CMR_1000_part3.result"
-    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR6(), MR7()]
-    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
-    mr_list = [MR1(), MR7()]
-    if flag == "Test MR5":
-        ts = TestCase_V1()
-        cmr_list = getCMRTestMR5List()
-    else:
-        ts = TestCase()
-        cmr_list = getCMRPermutationsList(mr_list)
-    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
-    #mutants_list = ["v0"]
-    for cmr in cmr_list:
-        table = dict(zip(mutants_list, [0]*len(mutants_list)))
-        for i in range(1000):
-            cmr.setTestCase(ts)
-            cmr.original_ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
-            cmr.original_ts.generateRandomTestcase()
-            cmr.setExecutor(dna)
-            for v in mutants_list:
-                dna.setVersion(v)
-                cmr.process()
-                if cmr.isViolate:
-                    table[v] = table[v]+1
-        cmr.setKilledMutantsTable(table)
-    result = open(result_to_save,"w")
+def recordResult(file_name, mutants_list, mr_list):
+    result = open("../results/"+file_name,"w")
     temp = [v+"\t" for v in mutants_list]
     temp.insert(0, "\t")
     temp.append("\n")
-    for cmr in cmr_list:
+    for cmr in mr_list:
         temp.append("{}\t".format(cmr.name))
         for v in mutants_list:
             temp.append(str(cmr.table[v])+"\t")
@@ -301,42 +266,52 @@ def testCMR():
     result.writelines(temp)
     result.close()
 
-
-def testSingleMR():
-    myenv = MyEnv()
-    myenv.CreateWorkingDirs()
-    ts =TestCase()
-    ts1 = TestCase_V1()
-    dna = Dnapars()
-    mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
-    #mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
-    mutants_list = ["v4"]
+def MetamorphicTesting(executor, mutants_list, mr_list, test_case, num_of_samples):
     for mr in mr_list:
         table = dict(zip(mutants_list, [0]*len(mutants_list)))
-        setTS(mr,ts, ts1)
-        for i in range(1000):
+        for i in range(num_of_samples):
+            mr.setTestCase(test_case)
             mr.original_ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
             mr.original_ts.generateRandomTestcase()
-            mr.setExecutor(dna)
+            mr.setExecutor(executor)
             for v in mutants_list:
-                dna.setVersion(v)
+                executor.setVersion(v)
                 mr.process()
                 if mr.isViolate:
                     table[v] = table[v]+1
         mr.setKilledMutantsTable(table)
-    result = open("result","w")
-    temp = []
-    for mr in mr_list:
-        temp.append("{}\n".format(mr.__class__.__name__))
-        for v, t in mr.table.items():
-            temp.append("{}: {}\n".format(v, t))
-    result.writelines(temp)
-    result.close()
+
+def testCMR():
+    dna = Dnapars()
+    num_of_samples = 1
+    result_to_save_1= "CMR_1000_part1.result"
+    result_to_save_2 = "CMR_1000_part2.result"
+    mr_list = [MR1(),MR2(), MR3(), MR4(),MR6(), MR7()]
+    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    cmr_list_1 = getCMRPermutationsList(mr_list)
+    cmr_list_2 = getCMRTestMR5List()
+    MetamorphicTesting(dna, mutants_list, cmr_list_1, TestCase(), num_of_samples)
+    recordResult(result_to_save_1, mutants_list, cmr_list_1)
+    MetamorphicTesting(dna, mutants_list, cmr_list_2, TestCase_V1(), num_of_samples)
+    recordResult(result_to_save_2, mutants_list, cmr_list_2)
+
+def testSingleMR():
+    ts_1 =TestCase()
+    ts_2 = TestCase_V1()
+    dna = Dnapars()
+    num_of_samples = 1
+    result_to_save_1 = "SMR_1000_part1.result"
+    result_to_save_2 = "SMR_1000_part2.result"
+    mr_list_1 = [MR1(),MR2(), MR3(), MR4(),MR6(), MR7()]
+    mr_list_2 = [MR5()]
+    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+    MetamorphicTesting(dna, mutants_list, mr_list_1, ts_1, num_of_samples)
+    MetamorphicTesting(dna, mutants_list, mr_list_2, ts_2, num_of_samples)
+    recordResult(result_to_save_1, mutants_list, mr_list_1)
+    recordResult(result_to_save_2, mutants_list, mr_list_2)
+
 
 def testSinglMRWithOneTestCase():
-    myenv = MyEnv()
-    myenv.CreateWorkingDirs()
-    killed_v = []
     ts =TestCase_V2()
     ts.setInputOutput("infile_{}".format("t"), "outfile_{}".format("t"),"outtree_{}".format("t"))
     ts.generateRandomTestcase()
@@ -353,52 +328,8 @@ def testSinglMRWithOneTestCase():
             table["v1"] = table["v1"]+1
         cmr.setKilledMutantsTable(table)
 
-def testCompositionMR():
-    myenv = MyEnv()
-    myenv.CreateWorkingDirs()
-    dna = Dnapars()
-    flag = "Test MR5"
-    result_to_save = "CMR_1000_part3.result"
-    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR6(), MR7()]
-    #mr_list = [MR1(),MR2(), MR3(), MR4(),MR5(),MR6(), MR7()]
-    mr_list = [MR1(), MR7()]
-    if flag == "Test MR5":
-        ts = TestCase_V1()
-        cmr_list = getCMRTestMR5List() 
-    else:
-        ts = TestCase()
-        cmr_list = getCMRPermutationsList(mr_list)
-    mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
-    #mutants_list = ["v0"]
-    for cmr in cmr_list: table = dict(zip(mutants_list, [0]*len(mutants_list)))
-        for i in range(1000):
-            cmr.setTestCase(ts)
-            cmr.original_ts.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
-            cmr.original_ts.generateRandomTestcase()
-            cmr.setExecutor(dna)
-            for v in mutants_list:
-                dna.setVersion(v)
-                cmr.process()
-                if cmr.isViolate:
-                    table[v] = table[v]+1
-        cmr.setKilledMutantsTable(table)
-    result = open(result_to_save,"w")
-    temp = [v+"\t" for v in mutants_list]
-    temp.insert(0, "\t")
-    temp.append("\n")
-    for cmr in cmr_list:
-        temp.append("{}\t".format(cmr.name))
-        for v in mutants_list:
-            temp.append(str(cmr.table[v])+"\t")
-        temp.append("\n")
-    result.writelines(temp)
-    result.close()
 
-
-def testMR7MR1():
-    myenv = MyEnv()
-    myenv.CreateWorkingDirs()
-    killed_v = []
+def testCMRWithOneTestCase():
     ts =TestCase_V2()
     ts.setInputOutput("infile_{}".format("t"), "outfile_{}".format("t"),"outtree_{}".format("t"))
     ts.generateRandomTestcase()
@@ -421,5 +352,6 @@ def testMR7MR1():
 
 
 if __name__ == "__main__":
-    for i in range(100):
-        testMR7()
+    myenv = MyEnv()
+    myenv.CreateWorkingDirs()
+    testSingleMR()
