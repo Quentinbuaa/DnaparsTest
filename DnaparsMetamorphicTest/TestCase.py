@@ -13,7 +13,7 @@ class TestCase():
 
     def generateRandomTestcase(self):
         self.A = random.randint(3,8)
-        self.B = random.randint(200,300)
+        self.B = random.randint(20,30)
         self.C = self.getNameList()
         self.matrix = self.getMatrix()
         myInput = Input(self.infile)
@@ -45,7 +45,7 @@ class TestCase_V1(TestCase):
 
     def generateRandomTestcase(self):
         self.A = 4
-        self.B = random.randint(200,300)
+        self.B = random.randint(20,30)
         self.C = self.getNameList()
         self.matrix = self.getMatrix()
         myInput = Input(self.infile)

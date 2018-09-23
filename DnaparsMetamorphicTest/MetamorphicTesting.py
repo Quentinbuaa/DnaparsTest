@@ -4,23 +4,28 @@ from TestCase import *
 
 class MetamorphicTesting:
     def __init__(self):
-        self.max_combination = 5
+        self.max_combination = 4
         self.executor = Dnapars()
         self.mutants_list = ["v1","v2","v3","v4","v5","v6","v7","v8","v9","v10"]
+        self.mr_list_1 = [MR1(),MR2(), MR3(), MR4(),MR6()]
+        self.mr_list_2 = [MR5()]
 
     def getCMRTestMR5List(self):
-        mr_list = [[MR5(),MR1()],[MR5(),MR2()],[MR5(),MR3()],[MR5(),MR4()],[MR5(),MR6()]]
         cmr_list = []
-        for cmr_c in mr_list:
-            temp = CompositionMR()
-            temp.setMRs(cmr_c)
-            cmr_list.append(temp)
+        for num_combination in range(1, self.max_combination - 1):
+            cmr_permutations = itertools.permutations(self.mr_list_1, num_combination)
+            for cmr_p in cmr_permutations:
+                temp = CompositionMR()
+                cmr_p = list(cmr_p)
+                cmr_p.insert(0, MR5())
+                temp.setMRs(cmr_p)
+                cmr_list.append(temp)
         return cmr_list
 
-    def getCMRPermutationsList(self,mr_list):
+    def getCMRPermutationsList(self):
         cmr_list = []
         for num_combination in range(2, self.max_combination):
-            cmr_permutations = itertools.permutations(mr_list, num_combination)
+            cmr_permutations = itertools.permutations(self.mr_list_1, num_combination)
             for cmr_p in cmr_permutations:
                 temp = CompositionMR()
                 temp.setMRs(list(cmr_p))
@@ -46,9 +51,9 @@ class MetamorphicTesting:
         for i in range(num_of_samples):
             test_case_type_1 = TestCase()
             test_case_type_2 = TestCase_V1()
-            test_case_type_1.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
+            test_case_type_1.setInputOutput("infile_1_{}".format(i), "outfile_1_{}".format(i),"outtree_1_{}".format(i))
             test_case_type_1.generateRandomTestcase()
-            test_case_type_2.setInputOutput("infile_{}".format(i), "outfile_{}".format(i),"outtree_{}".format(i))
+            test_case_type_2.setInputOutput("infile_2_{}".format(i), "outfile_2_{}".format(i),"outtree_2_{}".format(i))
             test_case_type_2.generateRandomTestcase()
             self.list_ts_type_1.append(test_case_type_1)
             self.list_ts_type_2.append(test_case_type_2)
@@ -69,30 +74,27 @@ class MetamorphicTesting:
     def testCMR(self):
         result_to_save_1= "CMR_1000_part1.result"
         result_to_save_2 = "CMR_1000_part2.result"
-        mr_list = [MR1(),MR2(), MR3(), MR4(),MR6()]
-        cmr_list_1 = self.getCMRPermutationsList(mr_list)
+        cmr_list_1 = self.getCMRPermutationsList()
         cmr_list_2 = self.getCMRTestMR5List()
-        self.MetamorphicTesting(cmr_list_1, self.list_ts_type_1)
-        self.recordResult(result_to_save_1, cmr_list_1)
+        #self.MetamorphicTesting(cmr_list_1, self.list_ts_type_1)
+        #self.recordResult(result_to_save_1, cmr_list_1)
         self.MetamorphicTesting(cmr_list_2, self.list_ts_type_2)
         self.recordResult(result_to_save_2, cmr_list_2)
 
     def testSingleMR(self):
         result_to_save_1 = "SMR_1000_part1.result"
         result_to_save_2 = "SMR_1000_part2.result"
-        mr_list_1 = [MR1(),MR2(), MR3(), MR4(),MR6()]
-        mr_list_2 = [MR5()]
-        self.MetamorphicTesting(mr_list_1, self.list_ts_type_1)
-        self.MetamorphicTesting(mr_list_2, self.list_ts_type_2)
-        self.recordResult(result_to_save_1, mr_list_1)
-        self.recordResult(result_to_save_2, mr_list_2)
+        self.MetamorphicTesting(self.mr_list_1, self.list_ts_type_1)
+        self.MetamorphicTesting(self.mr_list_2, self.list_ts_type_2)
+        self.recordResult(result_to_save_1, self.mr_list_1)
+        self.recordResult(result_to_save_2, self.mr_list_2)
 
 
 if __name__ == "__main__":
     myenv = MyEnv()
     myenv.CreateWorkingDirs()
     mt = MetamorphicTesting()
-    mt.SetTestCases(3)
+    mt.SetTestCases(1000)
     mt.testSingleMR()
     mt.testCMR()
 
